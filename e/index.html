@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Du bist eingeladen – Breadbox</title>
+<meta name="description" content="Jemand hat dich zu Breadbox eingeladen, dem privaten Foto-Feed für deinen Freundeskreis.">
+<!-- Einladungen gehoeren nicht in Suchmaschinen. -->
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/_stil.css">
+<style>
+  .code {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    margin: 0;
+    color: #2B3A2E;
+  }
+  .knopf {
+    display: inline-block;
+    background: #2B3A2E;
+    color: #EDF1E2;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+  }
+  .schritte { padding-left: 20px; margin: 8px 0 0; }
+  .schritte li { margin: 6px 0; }
+</style>
+</head>
+<body>
+<header><div class="innen">
+  <a class="marke" href="/">Breadbox</a>
+  <p class="claim">cooked by friends</p>
+</div></header>
+<main>
+  <h1 id="titel">Du bist eingeladen</h1>
+  <p id="vorspann">
+    Breadbox ist der private Foto-Feed für deinen Freundeskreis: Zeig, was heute bei dir auf dem
+    Teller landet, und schau, was die anderen kochen. Kein öffentlicher Feed, keine Likes, keine
+    Rangliste, keine Werbung.
+  </p>
+
+  <div class="karte" id="codeKarte" hidden>
+    <h3>Dein Einladungscode</h3>
+    <p class="code" id="codeText"></p>
+    <p class="leise" id="codeHinweis">
+      Den Code brauchst du gleich bei der Anmeldung – damit bist du sofort mit der Person
+      befreundet, die dich eingeladen hat.
+    </p>
+    <p><button class="knopf" id="kopieren" type="button">Code kopieren</button></p>
+  </div>
+
+  <h2>So geht's</h2>
+  <ol class="schritte">
+    <li>Breadbox laden.</li>
+    <li>Konto anlegen und Namen wählen.</li>
+    <li>Im Feld darunter den Code eintippen – fertig.</li>
+  </ol>
+
+  <p style="margin-top:20px"><a class="knopf" id="laden" href="#">Breadbox laden</a></p>
+  <p class="leise" id="ladenHinweis" hidden>Die App ist gerade noch in Prüfung bei Apple.</p>
+
+  <p class="leise" style="margin-top:28px">
+    Kostenlos, für iPhone. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
+  </p>
+</main>
+<footer><div class="innen"><a href="/support">Support</a><a href="/datenschutz">Datenschutz</a><span>© 2026 Breadbox</span></div></footer>
+
+<script>
+  // Adresse der App im App Store. Solange sie leer ist, zeigt die Seite
+  // statt eines toten Links den Hinweis, dass die Pruefung laeuft.
+  var APP_STORE_URL = "";
+
+  // Der Code kommt aus der Adresse und wird deshalb streng geprueft, bevor
+  // er auf die Seite kommt - und ausschliesslich per textContent gesetzt,
+  // nie als HTML.
+  var roh = new URLSearchParams(location.search).get("c") || "";
+  var code = roh.toUpperCase().replace(/[^A-Z2-9]/g, "").slice(0, 12);
+
+  if (code) {
+    document.getElementById("codeText").textContent = code;
+    document.getElementById("codeKarte").hidden = false;
+  } else {
+    // Ohne Code ist es keine Einladung, sondern nur eine Vorstellung.
+    document.getElementById("titel").textContent = "Breadbox";
+    document.getElementById("codeHinweis").textContent = "";
+  }
+
+  var laden = document.getElementById("laden");
+  if (APP_STORE_URL) {
+    laden.href = APP_STORE_URL;
+  } else {
+    laden.hidden = true;
+    document.getElementById("ladenHinweis").hidden = false;
+  }
+
+  var knopf = document.getElementById("kopieren");
+  if (knopf) {
+    knopf.addEventListener("click", function () {
+      navigator.clipboard.writeText(code).then(
+        function () {
+          knopf.textContent = "Kopiert";
+          setTimeout(function () { knopf.textContent = "Code kopieren"; }, 2000);
+        },
+        function () {
+          // Ohne Zwischenablage-Recht steht der Code ja gross darueber.
+          knopf.textContent = "Code oben abtippen";
+        }
+      );
+    });
+  }
+</script>
+</body>
+</html>
