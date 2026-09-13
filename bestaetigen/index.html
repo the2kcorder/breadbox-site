@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E-Mail bestätigen – Breadbox</title>
+<!-- Bestaetigungslinks gehoeren nicht in Suchmaschinen. -->
+<meta name="robots" content="noindex">
+<!-- Der Bestaetigungscode steht in der Adresse und darf nirgendwohin
+     als Referer mitgehen. -->
+<meta name="referrer" content="no-referrer">
+<!-- Die Seite spricht mit genau einem Server (Supabase) und laedt kein
+     fremdes Skript. Neue Verbindungen muessten hier eingetragen werden. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src https://rtttewronorognamnpud.supabase.co; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="/_stil.css">
+<style>
+  .knopf {
+    display: inline-block;
+    background: #2B3A2E;
+    color: #EDF1E2;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 26px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+  }
+  .knopf[disabled] { opacity: 0.6; cursor: default; }
+  .knopf:focus-visible { outline: 3px solid #8B3A5C; outline-offset: 3px; }
+  @media (max-width: 420px) {
+    .knopf { width: 100%; }
+  }
+  #titel:focus { outline: none; }
+</style>
+</head>
+<body>
+<header><div class="innen">
+  <a class="marke" href="/">Breadbox</a>
+  <p class="claim">cooked by friends</p>
+</div></header>
+<main>
+  <h1 id="titel" tabindex="-1">E-Mail bestätigen</h1>
+
+  <div id="status" role="status" aria-live="polite">
+    <!-- Bewusst leer: Ohne JavaScript stuende hier sonst fuer immer
+         "Einen Moment ..." ueber dem noscript-Hinweis. -->
+    <p id="text"></p>
+  </div>
+
+  <p id="knopfZeile" style="margin-top:20px" hidden>
+    <button class="knopf" id="knopf" type="button">E-Mail bestätigen</button>
+  </p>
+  <p class="leise" id="hinweis" hidden></p>
+
+  <noscript>
+    <p>Diese Seite braucht JavaScript, um deine Adresse zu bestätigen. Schalte es für
+    breadbox-app.de ein oder öffne den Link in einem anderen Browser.</p>
+  </noscript>
+
+  <p class="leise" style="margin-top:28px">
+    Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
+  </p>
+</main>
+<footer><div class="innen"><a href="/support">Support</a><a href="/datenschutz">Datenschutz</a><span>© 2026 Breadbox</span></div></footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // Der Link in der Bestaetigungsmail zeigt auf diese Seite statt auf
+  // supabase.co (Absender breadbox-app.de, Link auf eine fremde Domain -
+  // das sortieren Spamfilter gern aus). Die Seite loest den Code selbst ein.
+  //
+  // Nachgebaut ist genau der Aufruf von auth-js verifyOtp({ token_hash, type })
+  // (@supabase/auth-js 2.112.0, src/GoTrueClient.ts verifyOtp, src/lib/fetch.ts
+  // _request und _getRequestParams): POST {url}/verify, JSON-Rumpf, Header
+  // apikey + Authorization mit dem Anon-Schluessel, X-Supabase-Api-Version.
+  // Kein supabase-js, damit nichts von fremden Servern geladen wird.
+  //
+  // Der Anon-Schluessel ist oeffentlich, er steckt in jeder App-Auslieferung.
+  var SUPABASE_URL = "https://rtttewronorognamnpud.supabase.co";
+  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0dHRld3Jvbm9yb2duYW1ucHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3NTUwMzUsImV4cCI6MjEwMTMzMTAzNX0.WQYherw2lDKpkOCr7zujc2hNdb333FiyXcOo3K6iJ_E";
+  var ERLAUBTE_TYPEN = ["email", "signup"];
+  var ZEITLIMIT_MS = 15000;
+
+  var titel = document.getElementById("titel");
+  var text = document.getElementById("text");
+  var knopfZeile = document.getElementById("knopfZeile");
+  var knopf = document.getElementById("knopf");
+  var hinweis = document.getElementById("hinweis");
+
+  var ZUSTAENDE = {
+    bereit: {
+      titel: "E-Mail bestätigen",
+      text: "Ein Tipp noch, dann ist dein Breadbox-Konto freigeschaltet.",
+      knopf: "E-Mail bestätigen",
+      hinweis: "Der Knopf ist Absicht: Manche Mailprogramme öffnen Links vorab, um sie zu prüfen. Ohne ihn wäre dein Link verbraucht, bevor du ihn antippst."
+    },
+    laeuft: {
+      titel: "E-Mail bestätigen",
+      text: "Deine Adresse wird bestätigt …",
+      knopf: "Einen Moment …",
+      gesperrt: true
+    },
+    bestaetigt: {
+      titel: "E-Mail bestätigt",
+      text: "Deine Adresse ist bestätigt. Öffne Breadbox und melde dich mit deiner Mail und deinem Passwort an."
+    },
+    abgelaufen: {
+      titel: "Dieser Link gilt nicht mehr",
+      text: "Er ist abgelaufen oder wurde schon benutzt. Hast du deine Adresse schon bestätigt, melde dich einfach in Breadbox an. Sonst tippe in der App auf „Mail erneut senden“, dann kommt ein neuer Link."
+    },
+    netz: {
+      titel: "E-Mail bestätigen",
+      text: "Das hat gerade nicht geklappt. Prüf deine Internetverbindung und versuch es nochmal.",
+      knopf: "Nochmal versuchen"
+    },
+    zuViele: {
+      titel: "E-Mail bestätigen",
+      text: "Gerade kommen zu viele Anfragen an. Warte eine Minute und versuch es dann nochmal.",
+      knopf: "Nochmal versuchen"
+    },
+    kaputt: {
+      titel: "Der Link ist unvollständig",
+      text: "Manche Mailprogramme schneiden lange Links ab. Öffne die Mail nochmal und tippe direkt auf den Link darin. Klappt das nicht, tippe in Breadbox auf „Mail erneut senden“."
+    }
+  };
+
+  // Texte ausschliesslich per textContent, nie als HTML.
+  function zeige(name, fokus) {
+    var z = ZUSTAENDE[name];
+    titel.textContent = z.titel;
+    text.textContent = z.text;
+    if (z.knopf) {
+      knopf.textContent = z.knopf;
+      knopf.disabled = !!z.gesperrt;
+      knopfZeile.hidden = false;
+    } else {
+      knopfZeile.hidden = true;
+    }
+    hinweis.textContent = z.hinweis || "";
+    hinweis.hidden = !z.hinweis;
+    if (fokus) titel.focus();
+  }
+
+  // Den Code aus der Adresszeile nehmen, sobald er eine endgueltige Antwort
+  // bekommen hat - dann steht er weder im Verlauf noch in einem Screenshot.
+  function adresseAufraeumen() {
+    try {
+      history.replaceState(null, "", location.pathname);
+    } catch (e) { /* ohne History-API bleibt die Adresse eben stehen */ }
+  }
+
+  // Der Code kommt als ?token_hash=...&type=email (so steht es in der
+  // Mailvorlage). #token_hash=...&type=email wird genauso verstanden: Der Teil
+  // nach dem # geht nie an den Webserver (GitHub Pages) und landet damit in
+  // keinem Zugriffsprotokoll. Der Code ist einmalig eine Anmeldung wert.
+  var ausHash = new URLSearchParams(location.hash.replace(/^#/, ""));
+  var params = ausHash.get("token_hash") ? ausHash : new URLSearchParams(location.search);
+  var tokenHash = params.get("token_hash") || "";
+  var typ = params.get("type") || "";
+
+  // Der Code ist ein Hash (Hex, bei PKCE mit "pkce_" davor). Alles andere
+  // ist ein abgeschnittener oder veraenderter Link.
+  if (!/^[A-Za-z0-9_-]{16,200}$/.test(tokenHash) || ERLAUBTE_TYPEN.indexOf(typ) === -1) {
+    zeige("kaputt");
+    return;
+  }
+
+  // Bewusst NICHT automatisch einloesen: Mail-Scanner und Link-Vorschauen
+  // oeffnen die Seite vorab und wuerden den Code sonst verbrauchen.
+  zeige("bereit");
+
+  var laeuft = false;
+
+  knopf.addEventListener("click", function () {
+    if (laeuft || !tokenHash) return;
+    laeuft = true;
+    zeige("laeuft");
+
+    var abbruch = typeof AbortController === "function" ? new AbortController() : null;
+    var uhr = setTimeout(function () { if (abbruch) abbruch.abort(); }, ZEITLIMIT_MS);
+
+    fetch(SUPABASE_URL + "/auth/v1/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+        "apikey": ANON_KEY,
+        "Authorization": "Bearer " + ANON_KEY,
+        "X-Supabase-Api-Version": "2024-01-01"
+      },
+      // gotrue_meta_security wie in auth-js; captcha_token ist dort
+      // undefined und faellt beim JSON.stringify weg.
+      body: JSON.stringify({ type: typ, token_hash: tokenHash, gotrue_meta_security: {} }),
+      credentials: "omit",
+      cache: "no-store",
+      referrerPolicy: "no-referrer",
+      signal: abbruch ? abbruch.signal : undefined
+    }).then(function (antwort) {
+      if (antwort.ok) {
+        // Die Antwort enthaelt eine fertige Sitzung (access_token,
+        // refresh_token). Die Seite braucht sie nicht: nicht lesen, nicht
+        // speichern, nicht loggen - der Rumpf wird ungelesen verworfen.
+        // cancel() liefert ein Promise - ohne catch waere ein Fehlschlag eine
+        // unbehandelte Ablehnung in der Konsole.
+        try { if (antwort.body) antwort.body.cancel().catch(function () {}); } catch (e) { /* egal */ }
+        return "bestaetigt";
+      }
+      // Fehlerantworten enthalten keine Tokens, werden aber auch nicht
+      // gebraucht: Der Status reicht, technische Texte zeigt die Seite nie.
+      if (antwort.status === 429) return "zuViele";
+      if (antwort.status === 400 || antwort.status === 403 || antwort.status === 404 ||
+          antwort.status === 410 || antwort.status === 422) {
+        return "abgelaufen"; // Supabase: 403 otp_expired
+      }
+      return "netz";
+    }, function () {
+      return "netz"; // offline, Zeitlimit, Verbindung abgebrochen
+    }).then(function (ergebnis) {
+      clearTimeout(uhr);
+      laeuft = false;
+      if (ergebnis === "bestaetigt" || ergebnis === "abgelaufen") {
+        // Endgueltig: Der Code ist eingeloest oder ungueltig. Bei Netzfehlern
+        // bleibt er in der Adresse, damit auch ein Neuladen noch klappt.
+        tokenHash = "";
+        adresseAufraeumen();
+      }
+      zeige(ergebnis, true);
+    });
+  });
+})();
+</script>
+</body>
+</html>
