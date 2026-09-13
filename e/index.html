@@ -49,21 +49,32 @@
     <h3>Dein Einladungscode</h3>
     <p class="code" id="codeText"></p>
     <p class="leise" id="codeHinweis">
-      Den Code brauchst du gleich bei der Anmeldung – damit bist du sofort mit der Person
-      befreundet, die dich eingeladen hat.
+      Mit dem Code seid ihr sofort befreundet, sobald deine App-Version ihn einlösen kann – wie
+      das geht, steht gleich darunter.
     </p>
     <p><button class="knopf" id="kopieren" type="button">Code kopieren</button></p>
   </div>
 
   <h2>So geht's</h2>
+  <!-- Stimmt fuer 1.0 und die naechste Version: In 1.0 fehlt das Code-Feld auf
+       der Seite "Freunde" (EINLADEN_SICHTBAR = false), dort bleibt nur die Suche.
+       Bei der Anmeldung gibt es in keiner Version ein Feld fuer den Code. -->
   <ol class="schritte">
-    <li>Breadbox laden.</li>
-    <li>Konto anlegen und Namen wählen.</li>
-    <li>Im Feld darunter den Code eintippen – fertig.</li>
+    <li>Breadbox aus dem App Store laden und anmelden.</li>
+    <li>In der App unten auf „Breadbox“ tippen, dann auf „Die Küche“ und dort auf das Plus
+      „Freunde hinzufügen“.</li>
+    <li class="mitCode">Auf „Du hast selbst einen Code bekommen?“ tippen, den Code eingeben und
+      auf „Einlösen“ tippen. Ihr seid sofort befreundet.</li>
+    <li id="ohneCode" hidden>Im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach deinen
+      Freunden suchen und auf „Anfrage“ tippen. Befreundet seid ihr, sobald die Person annimmt.</li>
   </ol>
+  <p class="leise mitCode">Steht dort kein Kasten „Freunde einladen“, kann deine App-Version
+    Codes noch nicht einlösen. Dann im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach
+    der Person suchen, die dich eingeladen hat, und auf „Anfrage“ tippen. Befreundet seid ihr,
+    sobald sie annimmt.</p>
 
-  <p style="margin-top:20px"><a class="knopf" id="laden" href="#">Breadbox laden</a></p>
-  <p class="leise" id="ladenHinweis" hidden>Die App ist gerade noch in Prüfung bei Apple.</p>
+  <p style="margin-top:20px" id="ladenZeile"><a class="knopf" id="laden" href="#">Breadbox laden</a></p>
+  <p class="leise" id="ladenHinweis" hidden>Such im App Store nach „Breadbox“.</p>
 
   <p class="leise" style="margin-top:28px">
     Kostenlos, für iPhone. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
@@ -72,9 +83,9 @@
 <footer><div class="innen"><a href="/support">Support</a><a href="/datenschutz">Datenschutz</a><span>© 2026 Breadbox</span></div></footer>
 
 <script>
-  // Adresse der App im App Store. Solange sie leer ist, zeigt die Seite
-  // statt eines toten Links den Hinweis, dass die Pruefung laeuft.
-  var APP_STORE_URL = "";
+  // Adresse der App im App Store. Waere sie leer, zeigt die Seite statt
+  // eines toten Links den Hinweis, im App Store zu suchen.
+  var APP_STORE_URL = "https://apps.apple.com/de/app/breadbox/id6798416315";
 
   // Der Code kommt aus der Adresse und wird deshalb streng geprueft, bevor
   // er auf die Seite kommt - und ausschliesslich per textContent gesetzt,
@@ -88,14 +99,21 @@
   } else {
     // Ohne Code ist es keine Einladung, sondern nur eine Vorstellung.
     document.getElementById("titel").textContent = "Breadbox";
+    document.title = "Breadbox";
     document.getElementById("codeHinweis").textContent = "";
+    // Die Schritte zum Einloesen weichen dem einfachen Suchschritt.
+    var mitCode = document.querySelectorAll(".mitCode");
+    for (var i = 0; i < mitCode.length; i++) mitCode[i].hidden = true;
+    document.getElementById("ohneCode").hidden = false;
   }
 
   var laden = document.getElementById("laden");
   if (APP_STORE_URL) {
     laden.href = APP_STORE_URL;
   } else {
-    laden.hidden = true;
+    // Die ganze Zeile ausblenden: .knopf setzt display und wuerde das
+    // hidden-Attribut am Link selbst ueberstimmen.
+    document.getElementById("ladenZeile").hidden = true;
     document.getElementById("ladenHinweis").hidden = false;
   }
 
