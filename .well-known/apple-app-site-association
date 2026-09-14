@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["6N63T8UC4M.com.wefoodies.app"],
+        "components": [
+          { "/": "/e/*", "?": { "c": "?*" }, "comment": "Einladungslink mit Code" },
+          { "/": "/e", "?": { "c": "?*" }, "comment": "ohne Schlussstrich" }
+        ]
+      }
+    ]
+  }
+}

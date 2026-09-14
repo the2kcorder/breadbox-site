@@ -7,6 +7,13 @@
 <meta name="description" content="Jemand hat dich zu Breadbox eingeladen, dem privaten Foto-Feed für deinen Freundeskreis.">
 <!-- Einladungen gehoeren nicht in Suchmaschinen. -->
 <meta name="robots" content="noindex">
+<!-- Der Code steht in der Adresse und soll nicht als Referer mit in den
+     App Store gehen. -->
+<meta name="referrer" content="no-referrer">
+<!-- Bewusst KEIN Smart App Banner (apple-itunes-app): Wer die App nicht hat
+     und im Banner auf "Laden" tippt, springt am Kopieren vorbei - dann kennt
+     die App nach der Installation den Link nicht. Wer die App schon hat,
+     kommt ueber den Knopf "In Breadbox oeffnen" hinein. -->
 <link rel="stylesheet" href="/_stil.css">
 <style>
   .code {
@@ -16,6 +23,11 @@
     letter-spacing: 0.18em;
     margin: 0;
     color: #2B3A2E;
+    /* Angezeigt werden nur gueltige Codes, also genau 6 Zeichen (Skript
+       unten) - in 34px mit Sperrung rund 190px, das passt auch auf 320px.
+       break-all bleibt als Sicherung, falls die Laenge je waechst: sonst
+       liesse sich die Seite seitlich schieben. */
+    word-break: break-all;
   }
   .knopf {
     display: inline-block;
@@ -23,12 +35,20 @@
     color: #EDF1E2;
     text-decoration: none;
     font-weight: 700;
-    font-size: 15px;
-    padding: 12px 22px;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 26px;
     border-radius: 999px;
     border: none;
     cursor: pointer;
+    text-align: center;
   }
+  .knopf:focus-visible { outline: 3px solid #8B3A5C; outline-offset: 3px; }
+  @media (max-width: 420px) {
+    .knopf { width: 100%; }
+  }
+  .oeffnen { margin: 10px 0 0; font-size: 15px; text-align: center; }
+  .oeffnen a { font-weight: 600; white-space: nowrap; }
   .schritte { padding-left: 20px; margin: 8px 0 0; }
   .schritte li { margin: 6px 0; }
 </style>
@@ -48,33 +68,76 @@
   <div class="karte" id="codeKarte" hidden>
     <h3>Dein Einladungscode</h3>
     <p class="code" id="codeText"></p>
+    <!-- Regel wie einladung_lage() in
+         supabase/migrations/20260914110000_einladung_regeln.sql: Konto
+         hoechstens 72 Stunden alt UND noch keine Einladung eingeloest ->
+         sofort befreundet, sonst Anfrage. Zwei Sonderfaelle stehen hier NICHT
+         einzeln, deshalb die weiche Formulierung wie in Friends.jsx:
+         - "in der Regel": Hat die Person dein Konto frueher abgewiesen
+           (Anfrage abgelehnt oder entfernt, auch per Blockieren, oder die
+           Freundschaft beendet), bekommt auch ein neues Konto nur eine
+           Anfrage.
+         - "laeuft es ueber eine Freundschaftsanfrage" statt "bekommt die
+           Person eine Anfrage von dir": Hat sie dich schon angefragt, nimmst
+           du ihre Anfrage mit dem Code an und ihr seid befreundet.
+         Ausgeschrieben stehen beide in datenschutz.html Abschnitt 4. Gilt
+         erst, wenn die Migration live ist. -->
     <p class="leise" id="codeHinweis">
-      Mit dem Code seid ihr sofort befreundet, sobald deine App-Version ihn einlösen kann – wie
-      das geht, steht gleich darunter.
+      Neu bei Breadbox? Ist dein Konto höchstens drei Tage alt und hast du noch keine Einladung
+      eingelöst, seid ihr mit dem Code in der Regel sofort befreundet. Sonst läuft es über eine
+      Freundschaftsanfrage.
     </p>
-    <p><button class="knopf" id="kopieren" type="button">Code kopieren</button></p>
   </div>
 
+  <!-- "Breadbox laden" ist ein echter Link ohne preventDefault: Eine
+       Weiterleitung per JavaScript zaehlt in Instagram & Co. nicht als Tipp,
+       und der Sprung in den App Store bliebe haengen. Das Kopieren passiert
+       vorher im click-Handler, ohne await. -->
+  <p style="margin-top:20px" id="ladenZeile"><a class="knopf" id="laden" href="#">Breadbox laden</a></p>
+  <p class="leise" id="ladenHinweis" hidden>Such im App Store nach „Breadbox“.</p>
+  <!-- Das Kopieren passiert auch bei EINLADUNG_IN_DER_APP = false. Es soll
+       nicht still passieren (docs/offene-fragen.md, Z2 a). In der neuen
+       Fassung sagt es Schritt 1 unten, deshalb dieser Satz nur fuer heute. -->
+  <p class="leise nurHeute">Beim Tippen auf „Breadbox laden“ wird dein Einladungslink kopiert.</p>
+  <!-- Nie ein Link auf /e/ selbst: Ein Link auf dieselbe Domain oeffnet nie
+       die App. Das eigene Schema schon. -->
+  <p class="oeffnen" id="oeffnenZeile" hidden>
+    Breadbox schon auf dem iPhone? <a id="oeffnen" href="#">In Breadbox öffnen</a>
+  </p>
+
   <h2>So geht's</h2>
-  <!-- Stimmt fuer 1.0 und die naechste Version: In 1.0 fehlt das Code-Feld auf
-       der Seite "Freunde" (EINLADEN_SICHTBAR = false), dort bleibt nur die Suche.
-       Bei der Anmeldung gibt es in keiner Version ein Feld fuer den Code. -->
+  <!-- Zwei Fassungen, umgeschaltet ueber EINLADUNG_IN_DER_APP im Skript:
+       aus = Version 1.0 (kein Code-Feld, kein Link in die App, nur die Suche)
+       und die Versionen mit Code-Feld auf der Seite "Freunde";
+       an  = die Version, die den Link selbst oeffnet und den kopierten Link
+       beim ersten Start anbietet. Erst auf true, wenn sie im App Store ist. -->
   <ol class="schritte">
-    <li>Breadbox aus dem App Store laden und anmelden.</li>
-    <li>In der App unten auf „Breadbox“ tippen, dann auf „Die Küche“ und dort auf das Plus
+    <li class="nurApp" hidden>Auf „Breadbox laden“ tippen. Dein Einladungslink wird dabei kopiert.</li>
+    <li class="nurApp" hidden>Anmelden.</li>
+    <li class="nurApp" hidden>Breadbox fragt, ob du die Einladung einfügen möchtest. Auf „Einfügen“
+      tippen, das Einsetzen erlauben und die Einladung bestätigen.</li>
+
+    <li class="nurHeute">Breadbox aus dem App Store laden und anmelden.</li>
+    <li class="nurHeute">In der App unten auf „Breadbox“ tippen, dann auf „Die Küche“ und dort auf das Plus
       „Freunde hinzufügen“.</li>
-    <li class="mitCode">Auf „Du hast selbst einen Code bekommen?“ tippen, den Code eingeben und
-      auf „Einlösen“ tippen. Ihr seid sofort befreundet.</li>
-    <li id="ohneCode" hidden>Im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach deinen
+    <li class="nurHeute">Auf „Du hast selbst einen Code bekommen?“ tippen, den Code eingeben und
+      auf „Einlösen“ tippen.</li>
+
+    <li class="ohneCode" hidden>Breadbox aus dem App Store laden und anmelden.</li>
+    <li class="ohneCode" hidden>Im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach deinen
       Freunden suchen und auf „Anfrage“ tippen. Befreundet seid ihr, sobald die Person annimmt.</li>
   </ol>
-  <p class="leise mitCode">Steht dort kein Kasten „Freunde einladen“, kann deine App-Version
+
+  <p class="leise nurApp" hidden>Hat das nicht geklappt? In Breadbox unten auf „Breadbox“ tippen, dann
+    auf „Die Küche“, das Plus und „Du hast selbst einen Code bekommen?“, dort den Code von oben
+    eingeben.</p>
+  <p class="leise nurApp" hidden>Du hast Breadbox schon? Aktualisiere sie im App Store und tipp den
+    Link danach nochmal an.</p>
+
+  <p class="leise nurHeute">Steht dort kein Kasten „Freunde einladen“, kann deine App-Version
     Codes noch nicht einlösen. Dann im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach
     der Person suchen, die dich eingeladen hat, und auf „Anfrage“ tippen. Befreundet seid ihr,
     sobald sie annimmt.</p>
-
-  <p style="margin-top:20px" id="ladenZeile"><a class="knopf" id="laden" href="#">Breadbox laden</a></p>
-  <p class="leise" id="ladenHinweis" hidden>Such im App Store nach „Breadbox“.</p>
 
   <p class="leise" style="margin-top:28px">
     Kostenlos, für iPhone. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
@@ -83,28 +146,61 @@
 <footer><div class="innen"><a href="/support">Support</a><a href="/datenschutz">Datenschutz</a><span>© 2026 Breadbox</span></div></footer>
 
 <script>
+  // Schalter: erst auf true, wenn die App-Version mit Universal Link,
+  // Schema "breadbox-app" und Zwischenablage-Abfrage im App Store ist - nicht
+  // schon bei TestFlight, er gilt fuer alle, die den Link oeffnen.
+  // Stand 14.09.2026: Associated Domains ist an der App-ID aktiv, das
+  // Signierprofil neu erzeugt, und applinks:breadbox-app.de steckt in
+  // App.entitlements, der naechste Build traegt den Universal Link also.
+  // Das allein reicht fuer true nicht: Die Version muss im App Store sein.
+  // Solange false, zeigt die Seite den Weg fuer Version 1.0. Kopiert wird
+  // trotzdem schon, still - das schadet 1.0 nicht.
+  var EINLADUNG_IN_DER_APP = false;
+
+  // Testschalter: Mit #neu am Ende der Adresse zeigt die Seite schon die
+  // Fassung fuer die neue App, nur fuer diesen einen Aufruf. So lassen sich
+  // die neuen Schritte mit TestFlight am Geraet pruefen, ohne den Schalter
+  // oben fuer alle umzulegen (docs/offene-fragen.md, Z2 d).
+  if (location.hash === "#neu") EINLADUNG_IN_DER_APP = true;
+
   // Adresse der App im App Store. Waere sie leer, zeigt die Seite statt
   // eines toten Links den Hinweis, im App Store zu suchen.
   var APP_STORE_URL = "https://apps.apple.com/de/app/breadbox/id6798416315";
 
   // Der Code kommt aus der Adresse und wird deshalb streng geprueft, bevor
   // er auf die Seite kommt - und ausschliesslich per textContent gesetzt,
-  // nie als HTML.
+  // nie als HTML. Dieselbe Regel wie in der App (app/src/lib/einladungLink.js)
+  // und der Datenbank (einladung_neuer_code): genau 6 Zeichen aus
+  // ABCDEFGHJKLMNPQRSTUVWXYZ23456789, also ohne I, O, 0 und 1. Alles andere
+  // gilt als kein Code: Die Seite zeigt dann die Vorstellung ohne Code und
+  // kopiert nichts - ein abgeschnittener Link soll nicht als Einladung
+  // dastehen und in die Zwischenablage wandern.
   var roh = new URLSearchParams(location.search).get("c") || "";
-  var code = roh.toUpperCase().replace(/[^A-Z2-9]/g, "").slice(0, 12);
+  var code = roh.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) code = "";
+
+  function zeige(auswahl, sichtbar) {
+    var liste = document.querySelectorAll(auswahl);
+    for (var i = 0; i < liste.length; i++) liste[i].hidden = !sichtbar;
+  }
 
   if (code) {
     document.getElementById("codeText").textContent = code;
     document.getElementById("codeKarte").hidden = false;
+    zeige(".nurApp", EINLADUNG_IN_DER_APP);
+    zeige(".nurHeute", !EINLADUNG_IN_DER_APP);
+    if (EINLADUNG_IN_DER_APP) {
+      // Das Schema der App, nicht die https-Adresse (siehe Kommentar im HTML).
+      document.getElementById("oeffnen").href = "breadbox-app://e?c=" + encodeURIComponent(code);
+      document.getElementById("oeffnenZeile").hidden = false;
+    }
   } else {
     // Ohne Code ist es keine Einladung, sondern nur eine Vorstellung.
     document.getElementById("titel").textContent = "Breadbox";
     document.title = "Breadbox";
-    document.getElementById("codeHinweis").textContent = "";
-    // Die Schritte zum Einloesen weichen dem einfachen Suchschritt.
-    var mitCode = document.querySelectorAll(".mitCode");
-    for (var i = 0; i < mitCode.length; i++) mitCode[i].hidden = true;
-    document.getElementById("ohneCode").hidden = false;
+    zeige(".nurApp", false);
+    zeige(".nurHeute", false);
+    zeige(".ohneCode", true);
   }
 
   var laden = document.getElementById("laden");
@@ -117,20 +213,40 @@
     document.getElementById("ladenHinweis").hidden = false;
   }
 
-  var knopf = document.getElementById("kopieren");
-  if (knopf) {
-    knopf.addEventListener("click", function () {
-      navigator.clipboard.writeText(code).then(
-        function () {
-          knopf.textContent = "Kopiert";
-          setTimeout(function () { knopf.textContent = "Code kopieren"; }, 2000);
-        },
-        function () {
-          // Ohne Zwischenablage-Recht steht der Code ja gross darueber.
-          knopf.textContent = "Code oben abtippen";
-        }
-      );
-    });
+  // Instagram, Facebook, TikTok, LinkedIn, Snapchat: eigene Browser in der
+  // App. Ob writeText dort durchgeht, ist nicht gemessen - deshalb dort
+  // zuerst der alte Weg, solange der Tipp noch frisch ist.
+  var imAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|TikTok|LinkedInApp|Snapchat/i
+    .test(navigator.userAgent || "");
+
+  // Der ganze Link, nicht nur der Code: Die App erkennt ihn in der
+  // Zwischenablage an Host und Pfad.
+  laden.addEventListener("click", function () {
+    if (!code) return;
+    var link = "https://breadbox-app.de/e/?c=" + code;
+    if (imAppBrowser) kopiereAlt(link);
+    var ok = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).catch(function () {});
+        ok = true;
+      }
+    } catch (e) {}
+    if (!ok && !imAppBrowser) kopiereAlt(link);
+    // Kein preventDefault: der Link fuehrt selbst in den App Store.
+  });
+
+  function kopiereAlt(text) {
+    var feld = document.createElement("textarea"); // nicht readonly, sonst markiert iOS nichts
+    feld.value = text;
+    feld.setAttribute("aria-hidden", "true");
+    // 16px, damit iOS beim Fokus nicht hineinzoomt.
+    feld.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px";
+    document.body.appendChild(feld);
+    feld.focus();
+    feld.setSelectionRange(0, text.length);
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(feld);
   }
 </script>
 </body>
