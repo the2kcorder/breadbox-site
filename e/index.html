@@ -44,8 +44,13 @@
     text-align: center;
   }
   .knopf:focus-visible { outline: 3px solid #8B3A5C; outline-offset: 3px; }
+  /* .knopf setzt display und wuerde das hidden-Attribut sonst ueberstimmen. */
+  .knopf[hidden] { display: none; }
+  /* Am Computer stehen App Store und Google Play nebeneinander. */
+  #ladenPlay { margin-left: 8px; }
   @media (max-width: 420px) {
     .knopf { width: 100%; }
+    #ladenPlay { margin: 10px 0 0; }
   }
   .oeffnen { margin: 10px 0 0; font-size: 15px; text-align: center; }
   .oeffnen a { font-weight: 600; white-space: nowrap; }
@@ -68,24 +73,15 @@
   <div class="karte" id="codeKarte" hidden>
     <h3>Dein Einladungscode</h3>
     <p class="code" id="codeText"></p>
-    <!-- Regel wie einladung_lage() in
-         supabase/migrations/20260914110000_einladung_regeln.sql: Konto
-         hoechstens 72 Stunden alt UND noch keine Einladung eingeloest ->
-         sofort befreundet, sonst Anfrage. Zwei Sonderfaelle stehen hier NICHT
-         einzeln, deshalb die weiche Formulierung wie in Friends.jsx:
-         - "in der Regel": Hat die Person dein Konto frueher abgewiesen
-           (Anfrage abgelehnt oder entfernt, auch per Blockieren, oder die
-           Freundschaft beendet), bekommt auch ein neues Konto nur eine
-           Anfrage.
-         - "laeuft es ueber eine Freundschaftsanfrage" statt "bekommt die
-           Person eine Anfrage von dir": Hat sie dich schon angefragt, nimmst
-           du ihre Anfrage mit dem Code an und ihr seid befreundet.
-         Ausgeschrieben stehen beide in datenschutz.html Abschnitt 4. Gilt
-         erst, wenn die Migration live ist. -->
+    <!-- Seit 16.10.2026 (Migration 20261016130000_einladung_nur_anfrage)
+         macht der Code nie mehr sofort befreundet: Er schickt der Person
+         eine Freundschaftsanfrage, sie nimmt an. Hat sie dich schon
+         angefragt, nimmt der Code ihre Anfrage an - deshalb "laeuft ueber
+         eine Freundschaftsanfrage" statt "bekommt eine Anfrage von dir".
+         Ausgeschrieben in datenschutz.html Abschnitt 4. -->
     <p class="leise" id="codeHinweis">
-      Neu bei Breadbox? Ist dein Konto höchstens drei Tage alt und hast du noch keine Einladung
-      eingelöst, seid ihr mit dem Code in der Regel sofort befreundet. Sonst läuft es über eine
-      Freundschaftsanfrage.
+      Mit dem Code läuft eure Freundschaft über eine Freundschaftsanfrage: Befreundet seid ihr,
+      sobald sie angenommen ist.
     </p>
   </div>
 
@@ -93,8 +89,8 @@
        Weiterleitung per JavaScript zaehlt in Instagram & Co. nicht als Tipp,
        und der Sprung in den App Store bliebe haengen. Das Kopieren passiert
        vorher im click-Handler, ohne await. -->
-  <p style="margin-top:20px" id="ladenZeile"><a class="knopf" id="laden" href="#">Breadbox laden</a></p>
-  <p class="leise" id="ladenHinweis" hidden>Such im App Store nach „Breadbox“.</p>
+  <p style="margin-top:20px" id="ladenZeile"><a class="knopf" id="laden" href="#">Breadbox laden</a><a class="knopf" id="ladenPlay" href="#" hidden>Google Play</a></p>
+  <p class="leise" id="ladenHinweis" hidden>Such <span class="imStore">im App Store</span> nach „Breadbox“.</p>
   <!-- Das Kopieren passiert auch bei EINLADUNG_IN_DER_APP = false. Es soll
        nicht still passieren (docs/offene-fragen.md, Z2 a). In der neuen
        Fassung sagt es Schritt 1 unten, deshalb dieser Satz nur fuer heute. -->
@@ -123,24 +119,24 @@
     <li class="nurHeute">Auf „Du hast selbst einen Code bekommen?“ tippen, den Code eingeben und
       auf „Einlösen“ tippen.</li>
 
-    <li class="ohneCode" hidden>Breadbox aus dem App Store laden und anmelden.</li>
-    <li class="ohneCode" hidden>Im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach deinen
+    <li class="ohneCode" hidden>Breadbox <span class="ausStore">aus dem App Store</span> laden und anmelden.</li>
+    <li class="ohneCode" hidden>Im Feld „Name oder Nickname suchen“ nach deinen
       Freunden suchen und auf „Anfrage“ tippen. Befreundet seid ihr, sobald die Person annimmt.</li>
   </ol>
 
   <p class="leise nurApp" hidden>Hat das nicht geklappt? In Breadbox unten auf „Breadbox“ tippen, dann
     auf „Die Küche“, das Plus und „Du hast selbst einen Code bekommen?“, dort den Code von oben
     eingeben.</p>
-  <p class="leise nurApp" hidden>Du hast Breadbox schon? Aktualisiere sie im App Store und tipp den
+  <p class="leise nurApp" hidden>Du hast Breadbox schon? Aktualisiere sie <span class="imStore">im App Store</span> und tipp den
     Link danach nochmal an.</p>
 
   <p class="leise nurHeute">Steht dort kein Kasten „Freunde einladen“, kann deine App-Version
-    Codes noch nicht einlösen. Dann im Feld „Name oder Nickname suchen“ (ab vier Buchstaben) nach
+    Codes noch nicht einlösen. Dann im Feld „Name oder Nickname suchen“ nach
     der Person suchen, die dich eingeladen hat, und auf „Anfrage“ tippen. Befreundet seid ihr,
     sobald sie annimmt.</p>
 
   <p class="leise" style="margin-top:28px">
-    Kostenlos, für iPhone. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
+    Kostenlos, für iPhone und Android. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
   </p>
 </main>
 <footer><div class="innen"><a href="/support">Support</a><a href="/datenschutz">Datenschutz</a><span>© 2026 Breadbox</span></div></footer>
@@ -155,7 +151,19 @@
   // Das allein reicht fuer true nicht: Die Version muss im App Store sein.
   // Solange false, zeigt die Seite den Weg fuer Version 1.0. Kopiert wird
   // trotzdem schon, still - das schadet 1.0 nicht.
-  var EINLADUNG_IN_DER_APP = false;
+  // 16.10.2026: auf true (Richard: "ja mach alles und lad hoch"). Die
+  // Versionen mit dem neuen Weg sind seit Wochen im App Store und im Play
+  // Store (1.7), die Seite zeigte bis dahin noch die Anleitung von 1.0.
+  var EINLADUNG_IN_DER_APP = true;
+
+  // Welches Geraet: Android kommt zu Google Play, iPhone/iPad zum App Store,
+  // am Computer stehen beide Knoepfe (16.10.2026 - vorher fuehrte der Knopf
+  // auch auf Android in den App Store). iPads melden sich als Mac, aber mit
+  // Touch.
+  var ua = navigator.userAgent || "";
+  var istAndroid = /Android/i.test(ua);
+  var istIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.breadbox.app";
 
   // Testschalter: Mit #neu am Ende der Adresse zeigt die Seite schon die
   // Fassung fuer die neue App, nur fuer diesen einen Aufruf. So lassen sich
@@ -179,6 +187,15 @@
   var code = roh.toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) code = "";
 
+  function schreibe(auswahl, text) {
+    var liste = document.querySelectorAll(auswahl);
+    for (var i = 0; i < liste.length; i++) liste[i].textContent = text;
+  }
+  if (istAndroid) {
+    schreibe(".imStore", "im Play Store");
+    schreibe(".ausStore", "aus dem Play Store");
+  }
+
   function zeige(auswahl, sichtbar) {
     var liste = document.querySelectorAll(auswahl);
     for (var i = 0; i < liste.length; i++) liste[i].hidden = !sichtbar;
@@ -189,7 +206,10 @@
     document.getElementById("codeKarte").hidden = false;
     zeige(".nurApp", EINLADUNG_IN_DER_APP);
     zeige(".nurHeute", !EINLADUNG_IN_DER_APP);
-    if (EINLADUNG_IN_DER_APP) {
+    // "In Breadbox oeffnen" nur auf dem iPhone: Das Schema breadbox-app gibt
+    // es nur dort. Auf Android oeffnet schon der Link selbst die App
+    // (App Link, assetlinks.json), wenn sie installiert ist.
+    if (EINLADUNG_IN_DER_APP && istIOS) {
       // Das Schema der App, nicht die https-Adresse (siehe Kommentar im HTML).
       document.getElementById("oeffnen").href = "breadbox-app://e?c=" + encodeURIComponent(code);
       document.getElementById("oeffnenZeile").hidden = false;
@@ -204,7 +224,16 @@
   }
 
   var laden = document.getElementById("laden");
-  if (APP_STORE_URL) {
+  var ladenPlay = document.getElementById("ladenPlay");
+  if (istAndroid) {
+    laden.href = PLAY_STORE_URL;
+  } else if (!istIOS && APP_STORE_URL) {
+    // Computer: beide Stores.
+    laden.href = APP_STORE_URL;
+    laden.textContent = "App Store";
+    ladenPlay.href = PLAY_STORE_URL;
+    ladenPlay.hidden = false;
+  } else if (APP_STORE_URL) {
     laden.href = APP_STORE_URL;
   } else {
     // Die ganze Zeile ausblenden: .knopf setzt display und wuerde das
@@ -221,7 +250,7 @@
 
   // Der ganze Link, nicht nur der Code: Die App erkennt ihn in der
   // Zwischenablage an Host und Pfad.
-  laden.addEventListener("click", function () {
+  function kopiereEinladung() {
     if (!code) return;
     var link = "https://breadbox-app.de/e/?c=" + code;
     if (imAppBrowser) kopiereAlt(link);
@@ -233,8 +262,10 @@
       }
     } catch (e) {}
     if (!ok && !imAppBrowser) kopiereAlt(link);
-    // Kein preventDefault: der Link fuehrt selbst in den App Store.
-  });
+    // Kein preventDefault: der Link fuehrt selbst in den Store.
+  }
+  laden.addEventListener("click", kopiereEinladung);
+  ladenPlay.addEventListener("click", kopiereEinladung);
 
   function kopiereAlt(text) {
     var feld = document.createElement("textarea"); // nicht readonly, sonst markiert iOS nichts
