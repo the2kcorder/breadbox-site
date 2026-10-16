@@ -98,7 +98,7 @@
   <!-- Nie ein Link auf /e/ selbst: Ein Link auf dieselbe Domain oeffnet nie
        die App. Das eigene Schema schon. -->
   <p class="oeffnen" id="oeffnenZeile" hidden>
-    Breadbox schon auf dem iPhone? <a id="oeffnen" href="#">In Breadbox öffnen</a>
+    <span id="oeffnenFrage">Breadbox schon auf dem iPhone?</span> <a id="oeffnen" href="#">In Breadbox öffnen</a>
   </p>
 
   <h2>So geht's</h2>
@@ -107,11 +107,27 @@
        und die Versionen mit Code-Feld auf der Seite "Freunde";
        an  = die Version, die den Link selbst oeffnet und den kopierten Link
        beim ersten Start anbietet. Erst auf true, wenn sie im App Store ist. -->
+  <!-- Bei "an" je Geraet ein eigener Weg (data-weg, 16.10.2026), damit niemand
+       auf einen Schritt wartet, den es bei ihm nicht gibt:
+       ios        = Link kopieren, nach dem Anmelden "Einfuegen" (Zwischenablage)
+       androidNeu = Code kommt ueber den Play Store mit (ANDROID_NEU = true)
+       androidAlt = Android-Version ohne diesen Weg (1.7): Code von Hand
+       computer   = Handy-App laden, Code von Hand (kopiert wird am Rechner,
+                    das hilft dem Handy nicht) -->
   <ol class="schritte">
-    <li class="nurApp" hidden>Auf „Breadbox laden“ tippen. Dein Einladungslink wird dabei kopiert.</li>
-    <li class="nurApp" hidden>Anmelden.</li>
-    <li class="nurApp" hidden>Breadbox fragt, ob du die Einladung einfügen möchtest. Auf „Einfügen“
+    <li class="nurApp" data-weg="ios" hidden>Auf „Breadbox laden“ tippen. Dein Einladungslink wird dabei kopiert.</li>
+    <li class="nurApp" data-weg="ios" hidden>Anmelden.</li>
+    <li class="nurApp" data-weg="ios" hidden>Breadbox fragt, ob du die Einladung einfügen möchtest. Auf „Einfügen“
       tippen, das Einsetzen erlauben und die Einladung bestätigen.</li>
+
+    <li class="nurApp" data-weg="androidNeu" hidden>Auf „Breadbox laden“ tippen und Breadbox installieren.</li>
+    <li class="nurApp" data-weg="androidNeu" hidden>Anmelden.</li>
+    <li class="nurApp" data-weg="androidNeu" hidden>Breadbox zeigt dir die Einladung. Auf „Anfrage schicken“ tippen.</li>
+
+    <li class="nurApp" data-weg="androidAlt computer" hidden>Breadbox <span class="ausStore">aus dem App Store</span> laden und anmelden.</li>
+    <li class="nurApp" data-weg="androidAlt computer" hidden>In Breadbox unten auf „Breadbox“ tippen, dann auf „Die Küche“,
+      das Plus und „Du hast selbst einen Code bekommen?“.</li>
+    <li class="nurApp" data-weg="androidAlt computer" hidden>Den Code von oben eingeben und auf „Einlösen“ tippen.</li>
 
     <li class="nurHeute">Breadbox aus dem App Store laden und anmelden.</li>
     <li class="nurHeute">In der App unten auf „Breadbox“ tippen, dann auf „Die Küche“ und dort auf das Plus
@@ -124,10 +140,10 @@
       Freunden suchen und auf „Anfrage“ tippen. Befreundet seid ihr, sobald die Person annimmt.</li>
   </ol>
 
-  <p class="leise nurApp" hidden>Hat das nicht geklappt? In Breadbox unten auf „Breadbox“ tippen, dann
+  <p class="leise nurApp" data-weg="ios androidNeu" hidden>Hat das nicht geklappt? In Breadbox unten auf „Breadbox“ tippen, dann
     auf „Die Küche“, das Plus und „Du hast selbst einen Code bekommen?“, dort den Code von oben
     eingeben.</p>
-  <p class="leise nurApp" hidden>Du hast Breadbox schon? Aktualisiere sie <span class="imStore">im App Store</span> und tipp den
+  <p class="leise nurApp" data-weg="ios androidNeu" hidden>Du hast Breadbox schon? Aktualisiere sie <span class="imStore">im App Store</span> und tipp den
     Link danach nochmal an.</p>
 
   <p class="leise nurHeute">Steht dort kein Kasten „Freunde einladen“, kann deine App-Version
@@ -165,11 +181,30 @@
   var istIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   var PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.breadbox.app";
 
+  // Android-Weg (16.10.2026): Die Android-Version nach 1.7 kennt das Schema
+  // breadbox-app ("In Breadbox oeffnen", AndroidManifest.xml) und holt den Code
+  // nach der Installation aus dem Play Store (PlayEinladungPlugin.java). Erst
+  // auf true, wenn diese Version im Play Store ist - bis dahin zeigt die Seite
+  // auf Android keinen Oeffnen-Knopf und den Weg mit Code von Hand.
+  var ANDROID_NEU = false;
+
+  // Der Play-Store-Link traegt den Code mit (referrer=c%3DCODE). Google Play
+  // reicht ihn nach der Installation an die App weiter (Play Install
+  // Referrer, app/android/.../PlayEinladungPlugin.java) - auf Android braucht
+  // es dafuer kein Kopieren und kein Einfuegen. Aeltere Versionen (1.7)
+  // lesen ihn nicht, dann bleibt der Weg von Hand.
+  function playLink(c) {
+    return c ? PLAY_STORE_URL + "&referrer=" + encodeURIComponent("c=" + c) : PLAY_STORE_URL;
+  }
+
   // Testschalter: Mit #neu am Ende der Adresse zeigt die Seite schon die
   // Fassung fuer die neue App, nur fuer diesen einen Aufruf. So lassen sich
   // die neuen Schritte mit TestFlight am Geraet pruefen, ohne den Schalter
   // oben fuer alle umzulegen (docs/offene-fragen.md, Z2 d).
-  if (location.hash === "#neu") EINLADUNG_IN_DER_APP = true;
+  if (location.hash === "#neu") {
+    EINLADUNG_IN_DER_APP = true;
+    ANDROID_NEU = true;
+  }
 
   // Adresse der App im App Store. Waere sie leer, zeigt die Seite statt
   // eines toten Links den Hinweis, im App Store zu suchen.
@@ -194,6 +229,10 @@
   if (istAndroid) {
     schreibe(".imStore", "im Play Store");
     schreibe(".ausStore", "aus dem Play Store");
+  } else if (!istIOS) {
+    // Computer: beide Stores, die App kommt aufs Handy.
+    schreibe(".imStore", "im App Store oder bei Google Play");
+    schreibe(".ausStore", "aus dem App Store oder von Google Play aufs Handy");
   }
 
   function zeige(auswahl, sichtbar) {
@@ -206,12 +245,28 @@
     document.getElementById("codeKarte").hidden = false;
     zeige(".nurApp", EINLADUNG_IN_DER_APP);
     zeige(".nurHeute", !EINLADUNG_IN_DER_APP);
-    // "In Breadbox oeffnen" nur auf dem iPhone: Das Schema breadbox-app gibt
-    // es nur dort. Auf Android oeffnet schon der Link selbst die App
-    // (App Link, assetlinks.json), wenn sie installiert ist.
+    // Je Geraet nur sein eigener Weg (data-weg, siehe Kommentar im HTML).
+    var weg = istIOS ? "ios" : istAndroid ? (ANDROID_NEU ? "androidNeu" : "androidAlt") : "computer";
+    var wegTeile = document.querySelectorAll(".nurApp[data-weg]");
+    for (var w = 0; w < wegTeile.length; w++) {
+      if (wegTeile[w].getAttribute("data-weg").split(" ").indexOf(weg) < 0) wegTeile[w].hidden = true;
+    }
+    // "In Breadbox oeffnen": jedes Geraet nur seinen eigenen Weg, am Computer
+    // gar keinen (dort gibt es keine App zu oeffnen).
+    // iPhone: das Schema der App, nicht die https-Adresse (siehe Kommentar
+    // im HTML). Android: ein intent-Link mit Paketname - so oeffnen Chrome
+    // und die meisten In-App-Browser (Instagram) die App direkt, und ohne
+    // App fuehrt er in den Play Store, samt Code (playLink oben).
     if (EINLADUNG_IN_DER_APP && istIOS) {
-      // Das Schema der App, nicht die https-Adresse (siehe Kommentar im HTML).
+      if (!/iPhone|iPod/i.test(ua)) document.getElementById("oeffnenFrage").textContent = "Breadbox schon auf dem iPad?";
       document.getElementById("oeffnen").href = "breadbox-app://e?c=" + encodeURIComponent(code);
+      document.getElementById("oeffnenZeile").hidden = false;
+    } else if (EINLADUNG_IN_DER_APP && istAndroid && ANDROID_NEU) {
+      document.getElementById("oeffnenFrage").textContent = "Breadbox schon auf dem Handy?";
+      document.getElementById("oeffnen").href =
+        "intent://e?c=" + encodeURIComponent(code) +
+        "#Intent;scheme=breadbox-app;package=com.breadbox.app;S.browser_fallback_url=" +
+        encodeURIComponent(playLink(code)) + ";end";
       document.getElementById("oeffnenZeile").hidden = false;
     }
   } else {
@@ -226,12 +281,12 @@
   var laden = document.getElementById("laden");
   var ladenPlay = document.getElementById("ladenPlay");
   if (istAndroid) {
-    laden.href = PLAY_STORE_URL;
+    laden.href = playLink(code);
   } else if (!istIOS && APP_STORE_URL) {
     // Computer: beide Stores.
     laden.href = APP_STORE_URL;
     laden.textContent = "App Store";
-    ladenPlay.href = PLAY_STORE_URL;
+    ladenPlay.href = playLink(code);
     ladenPlay.hidden = false;
   } else if (APP_STORE_URL) {
     laden.href = APP_STORE_URL;
@@ -250,8 +305,13 @@
 
   // Der ganze Link, nicht nur der Code: Die App erkennt ihn in der
   // Zwischenablage an Host und Pfad.
+  // Kopiert wird nur auf dem iPhone/iPad (16.10.2026): Nur die iPhone-App
+  // liest die Zwischenablage (ZwischenablagePlugin). Auf Android kommt der
+  // Code ueber den Play-Store-Link mit (playLink), am Computer hilft eine
+  // Kopie dem Handy nicht - dort wuerde die Zwischenablage nur still
+  // ueberschrieben, und gesagt wird es dort auch nicht mehr.
   function kopiereEinladung() {
-    if (!code) return;
+    if (!code || !istIOS) return;
     var link = "https://breadbox-app.de/e/?c=" + code;
     if (imAppBrowser) kopiereAlt(link);
     var ok = false;
