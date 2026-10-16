@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.breadbox.app",
+      "sha256_cert_fingerprints": [
+        "71:3F:AA:2A:EE:08:A2:32:0C:FB:67:89:DC:10:FD:62:99:DF:ED:02:0B:C5:5C:81:93:34:E5:F7:29:6F:B2:61",
+        "50:F2:BA:C5:02:A2:74:C8:F8:8F:FE:6A:BC:A8:1B:AC:0C:B4:91:FA:27:67:E1:18:A3:EE:55:FC:20:17:A4:5E"
+      ]
+    }
+  }
+]
