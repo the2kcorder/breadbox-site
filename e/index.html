@@ -2,9 +2,10 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Du bist eingeladen – Breadbox</title>
-<meta name="description" content="Jemand hat dich zu Breadbox eingeladen, dem privaten Foto-Feed für deinen Freundeskreis.">
+<meta name="description" content="Jemand hat dich zu Breadbox eingeladen.">
+<meta name="theme-color" content="#0B110D">
 <!-- Einladungen gehoeren nicht in Suchmaschinen. -->
 <meta name="robots" content="noindex">
 <!-- Der Code steht in der Adresse und soll nicht als Referer mit in den
@@ -13,168 +14,315 @@
 <!-- Bewusst KEIN Smart App Banner (apple-itunes-app): Wer die App nicht hat
      und im Banner auf "Laden" tippt, springt am Kopieren vorbei - dann kennt
      die App nach der Installation den Link nicht. Wer die App schon hat,
-     kommt ueber den Knopf "In Breadbox oeffnen" hinein. -->
-<link rel="stylesheet" href="/_stil.css">
+     kommt ueber "In Breadbox oeffnen" hinein. -->
+<!-- Neu gestaltet 20.10.2026 (Richard: "sieht ehrlich gesagt sehr kacke aus
+     ... soll cool edel und mysterioes aussehen, dass man mehr wissen will",
+     Vorbild Retro): immer dunkel, eine grosse Karte, in der Mitte ein
+     leuchtender Teller, kurzer Text, ein Knopf. Die Anleitung steht
+     eingeklappt unter "So geht's". Logik (Code, Store je Geraet, Kopieren,
+     Schalter) unveraendert. Keine fremden Schriften: Iowan/Palatino/Georgia
+     sind auf den Geraeten schon da. -->
 <style>
-  .code {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 34px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    margin: 0;
-    color: #2B3A2E;
-    /* Angezeigt werden nur gueltige Codes, also genau 6 Zeichen (Skript
-       unten) - in 34px mit Sperrung rund 190px, das passt auch auf 320px.
-       break-all bleibt als Sicherung, falls die Laenge je waechst: sonst
-       liesse sich die Seite seitlich schieben. */
-    word-break: break-all;
+  :root {
+    --grund: #0B110D;
+    --karte: #121A14;
+    --creme: #F3F0E6;
+    --leise: rgba(243, 240, 230, 0.62);
+    --ganz-leise: rgba(243, 240, 230, 0.38);
+    --messing: #C9A96E;
+    --linie: rgba(243, 240, 230, 0.14);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-  .knopf {
-    display: inline-block;
-    background: #2B3A2E;
-    color: #EDF1E2;
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--grund); color: var(--creme); }
+  body {
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  a { color: inherit; }
+
+  /* Die grosse Karte mit Schimmer im Grund. */
+  .buehne {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 460px;
+    min-height: calc(100svh - 24px);
+    border-radius: 34px;
+    background: var(--karte);
+    display: flex;
+    flex-direction: column;
+    padding: 26px 26px 22px;
+    isolation: isolate;
+  }
+  .schimmer, .schimmer::before, .schimmer::after {
+    position: absolute;
+    inset: -30%;
+    z-index: -2;
+    content: "";
+    filter: blur(60px);
+  }
+  .schimmer {
+    background:
+      radial-gradient(40% 35% at 30% 30%, rgba(132, 158, 120, 0.55), transparent 70%),
+      radial-gradient(45% 40% at 75% 70%, rgba(62, 86, 48, 0.85), transparent 70%);
+    animation: treiben 18s ease-in-out infinite alternate;
+  }
+  .schimmer::before {
+    inset: 0;
+    background: radial-gradient(30% 25% at 60% 40%, rgba(201, 169, 110, 0.28), transparent 70%);
+    animation: treiben 23s ease-in-out infinite alternate-reverse;
+  }
+  .schimmer::after {
+    inset: 0;
+    background: linear-gradient(180deg, transparent 35%, rgba(11, 17, 13, 0.85) 100%);
+    filter: none;
+  }
+  /* Feines Korn, damit die Verlaeufe nicht nach Bildschirm aussehen. */
+  .korn {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.16;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  @keyframes treiben {
+    from { transform: translate3d(-4%, -3%, 0) rotate(0deg); }
+    to { transform: translate3d(5%, 4%, 0) rotate(8deg); }
+  }
+
+  .marke {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     text-decoration: none;
+    font-family: var(--serif);
     font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.01em;
+  }
+  /* In der Mitte ein Abendtisch mit Freunden (tisch.jpg, 20.10.2026 von
+     Richard), so weich gezeichnet, dass man es ahnt, aber nicht sieht.
+     Der Rand bleibt scharf, nur das Bild darin ist verschwommen. */
+  .mitte { flex: 1; display: grid; place-items: center; padding: 34px 0 20px; }
+  .teller {
+    position: relative;
+    overflow: hidden;
+    width: min(60vw, 224px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #3A2A1C;
+    box-shadow: 0 0 90px rgba(201, 169, 110, 0.28), 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(243, 240, 230, 0.2);
+    transform: translateZ(0);
+  }
+  .teller .bild {
+    position: absolute;
+    inset: -12%;
+    background: url("tisch.jpg") center / cover;
+    filter: blur(5px) saturate(1.1);
+    animation: atmen 14s ease-in-out infinite alternate;
+  }
+  .teller::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, rgba(255, 240, 210, 0.22), transparent 50%);
+    box-shadow: inset 0 0 0 1px rgba(243, 240, 230, 0.22);
+  }
+  @keyframes atmen {
+    from { transform: scale(1) rotate(0deg); }
+    to { transform: scale(1.08) rotate(4deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .schimmer, .schimmer::before, .teller .bild { animation: none; }
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(34px, 9.5vw, 44px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    text-align: center;
+    margin: 0;
+  }
+  .vorspann {
+    margin: 12px auto 0;
+    max-width: 30ch;
+    text-align: center;
+    color: var(--leise);
     font-size: 16px;
-    min-height: 48px;
-    padding: 12px 26px;
+    line-height: 1.5;
+  }
+  .code {
+    margin: 18px auto 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ganz-leise);
+  }
+  .code[hidden] { display: none; }
+  .code strong {
+    font-family: var(--serif);
+    font-size: 15px;
+    letter-spacing: 0.3em;
+    color: var(--messing);
+    font-weight: 700;
+  }
+
+  .knoepfe { margin: 26px 0 0; display: flex; flex-direction: column; gap: 10px; }
+  .knoepfe[hidden] { display: none; }
+  .knopf {
+    display: block;
+    width: 100%;
+    min-height: 58px;
+    padding: 17px 22px;
     border-radius: 999px;
-    border: none;
+    text-align: center;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    color: var(--creme);
+    background: rgba(243, 240, 230, 0.13);
+    box-shadow: inset 0 0 0 1px rgba(243, 240, 230, 0.16), 0 10px 30px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    transition: background 160ms ease, transform 160ms ease;
+  }
+  .knopf:active { transform: scale(0.98); background: rgba(243, 240, 230, 0.2); }
+  .knopf:focus-visible { outline: 2px solid var(--messing); outline-offset: 3px; }
+  .knopf[hidden] { display: none; }
+  .knopf.hell { background: var(--creme); color: #121A14; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+
+  .oeffnen { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--leise); }
+  .oeffnen[hidden] { display: none; }
+  .oeffnen a {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    color: var(--creme);
+    font-weight: 650;
+    text-decoration: none;
+    background: rgba(243, 240, 230, 0.13);
+    box-shadow: inset 0 0 0 1px rgba(243, 240, 230, 0.16);
+  }
+  .hinweis { margin: 12px 0 0; text-align: center; font-size: 13px; color: var(--ganz-leise); }
+  .hinweis[hidden] { display: none; }
+
+  details {
+    margin: 22px 0 0;
+    border-top: 1px solid var(--linie);
+    padding-top: 14px;
+  }
+  summary {
+    list-style: none;
     cursor: pointer;
     text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--leise);
   }
-  .knopf:focus-visible { outline: 3px solid #8B3A5C; outline-offset: 3px; }
-  /* .knopf setzt display und wuerde das hidden-Attribut sonst ueberstimmen. */
-  .knopf[hidden] { display: none; }
-  /* Am Computer stehen App Store und Google Play nebeneinander. */
-  #ladenPlay { margin-left: 8px; }
-  @media (max-width: 420px) {
-    .knopf { width: 100%; }
-    #ladenPlay { margin: 10px 0 0; }
-  }
-  .oeffnen { margin: 10px 0 0; font-size: 15px; text-align: center; }
-  .oeffnen a { font-weight: 600; white-space: nowrap; }
-  .schritte { padding-left: 20px; margin: 8px 0 0; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: " +"; }
+  details[open] summary::after { content: " –"; }
+  .schritte { margin: 14px 0 0; padding-left: 20px; color: var(--leise); font-size: 14.5px; line-height: 1.5; }
   .schritte li { margin: 6px 0; }
+  .klein { font-size: 13px; color: var(--ganz-leise); line-height: 1.5; margin: 10px 0 0; }
+  .klein[hidden], li[hidden] { display: none; }
+
+  footer {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--ganz-leise);
+  }
+  footer a { text-decoration: none; }
 </style>
 </head>
 <body>
-<header><div class="innen">
+<main class="buehne">
+  <div class="schimmer" aria-hidden="true"></div>
+  <div class="korn" aria-hidden="true"></div>
+
   <a class="marke" href="/">Breadbox</a>
-  <p class="claim">cooked by friends</p>
-</div></header>
-<main>
-  <h1 id="titel">Du bist eingeladen</h1>
-  <p id="vorspann">
-    Breadbox ist der private Foto-Feed für deinen Freundeskreis: Zeig, was heute bei dir auf dem
-    Teller landet, und schau, was die anderen kochen. Ein Tipp aufs Bild, und das Rezept ist da.
-  </p>
 
-  <div class="karte" id="codeKarte" hidden>
-    <h3>Dein Einladungscode</h3>
-    <p class="code" id="codeText"></p>
-    <!-- Seit 16.10.2026 (Migration 20261016130000_einladung_nur_anfrage)
-         macht der Code nie mehr sofort befreundet: Er schickt der Person
-         eine Freundschaftsanfrage, sie nimmt an. Hat sie dich schon
-         angefragt, nimmt der Code ihre Anfrage an - deshalb "laeuft ueber
-         eine Freundschaftsanfrage" statt "bekommt eine Anfrage von dir".
-         Ausgeschrieben in datenschutz.html Abschnitt 4. -->
-    <p class="leise" id="codeHinweis">
-      Mit dem Code läuft eure Freundschaft über eine Freundschaftsanfrage: Befreundet seid ihr,
-      sobald sie angenommen ist.
-    </p>
+  <div class="mitte"><div class="teller" aria-hidden="true"><div class="bild"></div></div></div>
+
+  <h1 id="titel">Du bist eingeladen.</h1>
+  <p class="vorspann" id="vorspann">Sieh, was deine Freunde kochen und wo sie essen gehen.</p>
+  <p class="code" id="codeKarte" hidden>Einladung <strong id="codeText"></strong></p>
+
+  <!-- "laden" ist ein echter Link ohne preventDefault: Eine Weiterleitung per
+       JavaScript zaehlt in Instagram & Co. nicht als Tipp, und der Sprung in
+       den App Store bliebe haengen. Das Kopieren passiert vorher im
+       click-Handler, ohne await. -->
+  <div class="knoepfe" id="ladenZeile">
+    <a class="knopf hell" id="laden" href="#">Einladung annehmen</a>
+    <a class="knopf" id="ladenPlay" href="#" hidden>Google Play</a>
   </div>
-
-  <!-- "Breadbox laden" ist ein echter Link ohne preventDefault: Eine
-       Weiterleitung per JavaScript zaehlt in Instagram & Co. nicht als Tipp,
-       und der Sprung in den App Store bliebe haengen. Das Kopieren passiert
-       vorher im click-Handler, ohne await. -->
-  <p style="margin-top:20px" id="ladenZeile"><a class="knopf" id="laden" href="#">Breadbox laden</a><a class="knopf" id="ladenPlay" href="#" hidden>Google Play</a></p>
-  <p class="leise" id="ladenHinweis" hidden>Such <span class="imStore">im App Store</span> nach „Breadbox“.</p>
-  <!-- Das Kopieren passiert auch bei EINLADUNG_IN_DER_APP = false. Es soll
-       nicht still passieren (docs/offene-fragen.md, Z2 a). In der neuen
-       Fassung sagt es Schritt 1 unten, deshalb dieser Satz nur fuer heute. -->
-  <p class="leise nurHeute">Beim Tippen auf „Breadbox laden“ wird dein Einladungslink kopiert.</p>
+  <p class="hinweis" id="ladenHinweis" hidden>Such <span class="imStore">im Store</span> nach „Breadbox“.</p>
   <!-- Nie ein Link auf /e/ selbst: Ein Link auf dieselbe Domain oeffnet nie
        die App. Das eigene Schema schon. -->
   <p class="oeffnen" id="oeffnenZeile" hidden>
-    <span id="oeffnenFrage">Breadbox schon auf dem iPhone?</span> <a id="oeffnen" href="#">In Breadbox öffnen</a>
+    <span id="oeffnenFrage">Breadbox schon auf dem iPhone?</span> <a id="oeffnen" href="#">Öffnen</a>
   </p>
 
-  <h2>So geht's</h2>
-  <!-- Zwei Fassungen, umgeschaltet ueber EINLADUNG_IN_DER_APP im Skript:
-       aus = Version 1.0 (kein Code-Feld, kein Link in die App, nur die Suche)
-       und die Versionen mit Code-Feld auf der Seite "Freunde";
-       an  = die Version, die den Link selbst oeffnet und den kopierten Link
-       beim ersten Start anbietet. Erst auf true, wenn sie im App Store ist. -->
-  <!-- Bei "an" je Geraet ein eigener Weg (data-weg, 16.10.2026), damit niemand
-       auf einen Schritt wartet, den es bei ihm nicht gibt:
-       ios        = Link kopieren, nach dem Anmelden "Einfuegen" (Zwischenablage)
-       androidNeu = Code kommt ueber den Play Store mit (ANDROID_NEU = true)
-       androidAlt = Android-Version ohne diesen Weg (1.7): Code von Hand
-       computer   = Handy-App laden, Code von Hand (kopiert wird am Rechner,
-                    das hilft dem Handy nicht) -->
-  <ol class="schritte">
-    <li class="nurApp" data-weg="ios" hidden>Auf „Breadbox laden“ tippen. Dein Einladungslink wird dabei kopiert.</li>
-    <li class="nurApp" data-weg="ios" hidden>Anmelden.</li>
-    <li class="nurApp" data-weg="ios" hidden>Breadbox fragt, ob du die Einladung einfügen möchtest. Auf „Einfügen“
-      tippen, das Einsetzen erlauben und die Einladung bestätigen.</li>
+  <details>
+    <summary>So geht's</summary>
+    <!-- Je Geraet ein eigener Weg (data-weg, 16.10.2026):
+         ios        = Link kopieren, nach dem Anmelden "Einfuegen" (Zwischenablage)
+         androidNeu = Code kommt ueber den Play Store mit (ANDROID_NEU = true)
+         androidAlt = Android-Version ohne diesen Weg (1.7): Code von Hand
+         computer   = Handy-App laden, Code von Hand -->
+    <ol class="schritte">
+      <li class="nurApp" data-weg="ios" hidden>Auf „Einladung annehmen“ tippen. Dein Einladungslink wird dabei kopiert.</li>
+      <li class="nurApp" data-weg="ios" hidden>Breadbox laden und anmelden.</li>
+      <li class="nurApp" data-weg="ios" hidden>Breadbox fragt, ob du die Einladung einfügen möchtest. Auf „Einfügen“ tippen und bestätigen.</li>
 
-    <li class="nurApp" data-weg="androidNeu" hidden>Auf „Breadbox laden“ tippen und Breadbox installieren.</li>
-    <li class="nurApp" data-weg="androidNeu" hidden>Anmelden.</li>
-    <li class="nurApp" data-weg="androidNeu" hidden>Breadbox zeigt dir die Einladung. Auf „Anfrage schicken“ tippen.</li>
+      <li class="nurApp" data-weg="androidNeu" hidden>Auf „Einladung annehmen“ tippen und Breadbox installieren.</li>
+      <li class="nurApp" data-weg="androidNeu" hidden>Anmelden.</li>
+      <li class="nurApp" data-weg="androidNeu" hidden>Breadbox zeigt dir die Einladung. Bestätigen, fertig.</li>
 
-    <li class="nurApp" data-weg="androidAlt computer" hidden>Breadbox <span class="ausStore">aus dem App Store</span> laden und anmelden.</li>
-    <li class="nurApp" data-weg="androidAlt computer" hidden>In Breadbox unten auf „Breadbox“ tippen, dann auf „Die Küche“,
-      das Plus und „Du hast selbst einen Code bekommen?“.</li>
-    <li class="nurApp" data-weg="androidAlt computer" hidden>Den Code von oben eingeben und auf „Einlösen“ tippen.</li>
+      <li class="nurApp" data-weg="androidAlt computer" hidden>Breadbox <span class="ausStore">aus dem Store</span> laden und anmelden.</li>
+      <li class="nurApp" data-weg="androidAlt computer" hidden>Unten auf „Breadbox“ tippen, dann „Die Küche“, das Plus und „Du hast selbst einen Code bekommen?“.</li>
+      <li class="nurApp" data-weg="androidAlt computer" hidden>Den Code von oben eingeben und auf „Einlösen“ tippen.</li>
 
-    <li class="nurHeute">Breadbox aus dem App Store laden und anmelden.</li>
-    <li class="nurHeute">In der App unten auf „Breadbox“ tippen, dann auf „Die Küche“ und dort auf das Plus
-      „Freunde hinzufügen“.</li>
-    <li class="nurHeute">Auf „Du hast selbst einen Code bekommen?“ tippen, den Code eingeben und
-      auf „Einlösen“ tippen.</li>
-
-    <li class="ohneCode" hidden>Breadbox <span class="ausStore">aus dem App Store</span> laden und anmelden.</li>
-    <li class="ohneCode" hidden>Im Feld „Name oder Nickname suchen“ nach deinen
-      Freunden suchen und auf „Anfrage“ tippen. Befreundet seid ihr, sobald die Person annimmt.</li>
-  </ol>
-
-  <p class="leise nurApp" data-weg="ios androidNeu" hidden>Hat das nicht geklappt? In Breadbox unten auf „Breadbox“ tippen, dann
-    auf „Die Küche“, das Plus und „Du hast selbst einen Code bekommen?“, dort den Code von oben
-    eingeben.</p>
-  <p class="leise nurApp" data-weg="ios androidNeu" hidden>Du hast Breadbox schon? Aktualisiere sie <span class="imStore">im App Store</span> und tipp den
-    Link danach nochmal an.</p>
-
-  <p class="leise nurHeute">Steht dort kein Kasten „Freunde einladen“, kann deine App-Version
-    Codes noch nicht einlösen. Dann im Feld „Name oder Nickname suchen“ nach
-    der Person suchen, die dich eingeladen hat, und auf „Anfrage“ tippen. Befreundet seid ihr,
-    sobald sie annimmt.</p>
-
-  <p class="leise" style="margin-top:28px">
-    Kostenlos, für iPhone und Android. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a>
-  </p>
+      <li class="ohneCode" hidden>Breadbox <span class="ausStore">aus dem Store</span> laden und anmelden.</li>
+      <li class="ohneCode" hidden>Nach deinen Freunden suchen und auf „Anfrage“ tippen.</li>
+    </ol>
+    <p class="klein nurApp" data-weg="ios androidNeu" hidden>Hat das nicht geklappt? In Breadbox unten auf „Breadbox“, dann „Die Küche“, das Plus und „Du hast selbst einen Code bekommen?“ – dort den Code von oben eingeben.</p>
+    <p class="klein nurApp" data-weg="ios androidNeu" hidden>Du hast Breadbox schon? Aktualisiere sie <span class="imStore">im Store</span> und tipp den Link danach nochmal an.</p>
+    <p class="klein">Kostenlos, für iPhone und Android. Fragen? <a href="mailto:support@breadbox-app.de">support@breadbox-app.de</a></p>
+  </details>
 </main>
-<footer><div class="innen"><a href="/support">Support</a><a href="/datenschutz">Datenschutz</a><span>© 2026 Breadbox</span></div></footer>
+<footer><a href="/datenschutz">Datenschutz</a><a href="/support">Support</a><span>© 2026 Breadbox</span></footer>
 
 <script>
-  // Schalter: erst auf true, wenn die App-Version mit Universal Link,
-  // Schema "breadbox-app" und Zwischenablage-Abfrage im App Store ist - nicht
-  // schon bei TestFlight, er gilt fuer alle, die den Link oeffnen.
-  // Stand 14.09.2026: Associated Domains ist an der App-ID aktiv, das
-  // Signierprofil neu erzeugt, und applinks:breadbox-app.de steckt in
-  // App.entitlements, der naechste Build traegt den Universal Link also.
-  // Das allein reicht fuer true nicht: Die Version muss im App Store sein.
-  // Solange false, zeigt die Seite den Weg fuer Version 1.0. Kopiert wird
-  // trotzdem schon, still - das schadet 1.0 nicht.
-  // 16.10.2026: auf true (Richard: "ja mach alles und lad hoch"). Die
-  // Versionen mit dem neuen Weg sind seit Wochen im App Store und im Play
-  // Store (1.7), die Seite zeigte bis dahin noch die Anleitung von 1.0.
+  // Schalter: Seite fuer die App-Versionen, die Links selbst oeffnen und den
+  // kopierten Link beim ersten Start anbieten. Seit 16.10.2026 true (Richard:
+  // "ja mach alles und lad hoch"). Bei false zeigt die Seite nur die
+  // Schritte von Hand.
   var EINLADUNG_IN_DER_APP = true;
 
   // Welches Geraet: Android kommt zu Google Play, iPhone/iPad zum App Store,
-  // am Computer stehen beide Knoepfe (16.10.2026 - vorher fuehrte der Knopf
-  // auch auf Android in den App Store). iPads melden sich als Mac, aber mit
+  // am Computer stehen beide Knoepfe. iPads melden sich als Mac, aber mit
   // Touch.
   var ua = navigator.userAgent || "";
   var istAndroid = /Android/i.test(ua);
@@ -182,25 +330,19 @@
   var PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.breadbox.app";
 
   // Android-Weg (16.10.2026): Die Android-Version nach 1.7 kennt das Schema
-  // breadbox-app ("In Breadbox oeffnen", AndroidManifest.xml) und holt den Code
-  // nach der Installation aus dem Play Store (PlayEinladungPlugin.java). Erst
-  // auf true, wenn diese Version im Play Store ist - bis dahin zeigt die Seite
-  // auf Android keinen Oeffnen-Knopf und den Weg mit Code von Hand.
+  // breadbox-app und holt den Code nach der Installation aus dem Play Store
+  // (PlayEinladungPlugin.java). Erst auf true, wenn diese Version im Play
+  // Store ist - bis dahin auf Android kein Oeffnen-Knopf und der Weg von Hand.
   var ANDROID_NEU = false;
 
-  // Der Play-Store-Link traegt den Code mit (referrer=c%3DCODE). Google Play
-  // reicht ihn nach der Installation an die App weiter (Play Install
-  // Referrer, app/android/.../PlayEinladungPlugin.java) - auf Android braucht
-  // es dafuer kein Kopieren und kein Einfuegen. Aeltere Versionen (1.7)
-  // lesen ihn nicht, dann bleibt der Weg von Hand.
+  // Der Play-Store-Link traegt den Code mit (referrer=c%3DCODE), Google Play
+  // reicht ihn nach der Installation an die App weiter.
   function playLink(c) {
     return c ? PLAY_STORE_URL + "&referrer=" + encodeURIComponent("c=" + c) : PLAY_STORE_URL;
   }
 
-  // Testschalter: Mit #neu am Ende der Adresse zeigt die Seite schon die
-  // Fassung fuer die neue App, nur fuer diesen einen Aufruf. So lassen sich
-  // die neuen Schritte mit TestFlight am Geraet pruefen, ohne den Schalter
-  // oben fuer alle umzulegen (docs/offene-fragen.md, Z2 d).
+  // Testschalter: #neu am Ende der Adresse zeigt die Fassung fuer die neue
+  // App, nur fuer diesen Aufruf.
   if (location.hash === "#neu") {
     EINLADUNG_IN_DER_APP = true;
     ANDROID_NEU = true;
@@ -210,15 +352,14 @@
   // eines toten Links den Hinweis, im App Store zu suchen.
   var APP_STORE_URL = "https://apps.apple.com/de/app/breadbox/id6798416315";
 
-  // Der Code kommt aus der Adresse und wird deshalb streng geprueft, bevor
-  // er auf die Seite kommt - und ausschliesslich per textContent gesetzt,
-  // nie als HTML. Dieselbe Regel wie in der App (app/src/lib/einladungLink.js)
-  // und der Datenbank (einladung_neuer_code): genau 6 Zeichen aus
-  // ABCDEFGHJKLMNPQRSTUVWXYZ23456789, also ohne I, O, 0 und 1. Alles andere
-  // gilt als kein Code: Die Seite zeigt dann die Vorstellung ohne Code und
-  // kopiert nichts - ein abgeschnittener Link soll nicht als Einladung
-  // dastehen und in die Zwischenablage wandern.
-  var roh = new URLSearchParams(location.search).get("c") || "";
+  // Der Code kommt aus der Adresse und wird streng geprueft, bevor er auf die
+  // Seite kommt - und nur per textContent gesetzt, nie als HTML. Dieselbe
+  // Regel wie in der App (app/src/lib/einladungLink.js) und der Datenbank:
+  // genau 6 Zeichen aus ABCDEFGHJKLMNPQRSTUVWXYZ23456789. Alles andere gilt
+  // als kein Code: dann Vorstellung ohne Code, nichts wird kopiert.
+  // ?g= nur als Rueckfall, Gruppenlinks benutzen ?c= (lib/links.js).
+  var params = new URLSearchParams(location.search);
+  var roh = params.get("c") || params.get("g") || "";
   var code = roh.toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) code = "";
 
@@ -226,14 +367,9 @@
     var liste = document.querySelectorAll(auswahl);
     for (var i = 0; i < liste.length; i++) liste[i].textContent = text;
   }
-  if (istAndroid) {
-    schreibe(".imStore", "im Play Store");
-    schreibe(".ausStore", "aus dem Play Store");
-  } else if (!istIOS) {
-    // Computer: beide Stores, die App kommt aufs Handy.
-    schreibe(".imStore", "im App Store oder bei Google Play");
-    schreibe(".ausStore", "aus dem App Store oder von Google Play aufs Handy");
-  }
+  // In den Texten nur "Store", nie "App Store" oder "Play Store" (20.10.2026,
+  // Richard: "es soll nur store stehen wegen apple") - die Spans tragen schon
+  // die neutrale Fassung, deshalb hier nichts mehr umschreiben.
 
   function zeige(auswahl, sichtbar) {
     var liste = document.querySelectorAll(auswahl);
@@ -244,19 +380,15 @@
     document.getElementById("codeText").textContent = code;
     document.getElementById("codeKarte").hidden = false;
     zeige(".nurApp", EINLADUNG_IN_DER_APP);
-    zeige(".nurHeute", !EINLADUNG_IN_DER_APP);
-    // Je Geraet nur sein eigener Weg (data-weg, siehe Kommentar im HTML).
+    // Je Geraet nur sein eigener Weg.
     var weg = istIOS ? "ios" : istAndroid ? (ANDROID_NEU ? "androidNeu" : "androidAlt") : "computer";
+    if (!EINLADUNG_IN_DER_APP) weg = "computer";
     var wegTeile = document.querySelectorAll(".nurApp[data-weg]");
     for (var w = 0; w < wegTeile.length; w++) {
-      if (wegTeile[w].getAttribute("data-weg").split(" ").indexOf(weg) < 0) wegTeile[w].hidden = true;
+      wegTeile[w].hidden = wegTeile[w].getAttribute("data-weg").split(" ").indexOf(weg) < 0;
     }
-    // "In Breadbox oeffnen": jedes Geraet nur seinen eigenen Weg, am Computer
-    // gar keinen (dort gibt es keine App zu oeffnen).
-    // iPhone: das Schema der App, nicht die https-Adresse (siehe Kommentar
-    // im HTML). Android: ein intent-Link mit Paketname - so oeffnen Chrome
-    // und die meisten In-App-Browser (Instagram) die App direkt, und ohne
-    // App fuehrt er in den Play Store, samt Code (playLink oben).
+    // "Oeffnen": iPhone ueber das Schema der App, Android ueber einen
+    // intent-Link (ohne App in den Play Store, samt Code), am Computer nicht.
     if (EINLADUNG_IN_DER_APP && istIOS) {
       if (!/iPhone|iPod/i.test(ua)) document.getElementById("oeffnenFrage").textContent = "Breadbox schon auf dem iPad?";
       document.getElementById("oeffnen").href = "breadbox-app://e?c=" + encodeURIComponent(code);
@@ -272,14 +404,15 @@
   } else {
     // Ohne Code ist es keine Einladung, sondern nur eine Vorstellung.
     document.getElementById("titel").textContent = "Breadbox";
+    document.getElementById("vorspann").textContent = "Sieh, was deine Freunde kochen und wo sie essen gehen.";
     document.title = "Breadbox";
     zeige(".nurApp", false);
-    zeige(".nurHeute", false);
     zeige(".ohneCode", true);
   }
 
   var laden = document.getElementById("laden");
   var ladenPlay = document.getElementById("ladenPlay");
+  if (!code) laden.textContent = "Breadbox laden";
   if (istAndroid) {
     laden.href = playLink(code);
   } else if (!istIOS && APP_STORE_URL) {
@@ -291,8 +424,6 @@
   } else if (APP_STORE_URL) {
     laden.href = APP_STORE_URL;
   } else {
-    // Die ganze Zeile ausblenden: .knopf setzt display und wuerde das
-    // hidden-Attribut am Link selbst ueberstimmen.
     document.getElementById("ladenZeile").hidden = true;
     document.getElementById("ladenHinweis").hidden = false;
   }
@@ -304,12 +435,8 @@
     .test(navigator.userAgent || "");
 
   // Der ganze Link, nicht nur der Code: Die App erkennt ihn in der
-  // Zwischenablage an Host und Pfad.
-  // Kopiert wird nur auf dem iPhone/iPad (16.10.2026): Nur die iPhone-App
-  // liest die Zwischenablage (ZwischenablagePlugin). Auf Android kommt der
-  // Code ueber den Play-Store-Link mit (playLink), am Computer hilft eine
-  // Kopie dem Handy nicht - dort wuerde die Zwischenablage nur still
-  // ueberschrieben, und gesagt wird es dort auch nicht mehr.
+  // Zwischenablage an Host und Pfad. Kopiert wird nur auf iPhone/iPad - nur
+  // die iPhone-App liest die Zwischenablage.
   function kopiereEinladung() {
     if (!code || !istIOS) return;
     var link = "https://breadbox-app.de/e/?c=" + code;
