@@ -155,6 +155,10 @@
     text-align: center;
     margin: 0;
   }
+  h1 .gruppe { color: var(--messing); }
+  #titel, #vorspann { transition: opacity 220ms ease-out; }
+  .wartet #titel, .wartet #vorspann { opacity: 0; }
+  h1.lang { font-size: clamp(28px, 7.5vw, 36px); }
   .vorspann {
     margin: 12px auto 0;
     max-width: 30ch;
@@ -408,6 +412,49 @@
     document.title = "Breadbox";
     zeige(".nurApp", false);
     zeige(".ohneCode", true);
+  }
+
+  // Gruppenlink (20.10.2026, Richard: "ja bau so"): Ist der Code ein aktiver
+  // Gruppenlink, sagt die Seite, in welche Gruppe und von wem - "Du bist
+  // eingeladen in WG Isarstrasse", "von Maren", ab 3 Leuten (Erstellerin
+  // mitgezaehlt) "· 3 sind schon dabei"; darunter waere eine kleine Zahl
+  // eher abschreckend. Die Datenbank-Funktion gruppenlink_info gibt nur Name,
+  // Vorname der Erstellerin und Zahl heraus (Migration 20261020180000).
+  // Persoenlicher Code, geschlossener Link oder kein Netz: nichts passiert,
+  // die allgemeine Einladung bleibt stehen. Alles per textContent.
+  // Der Schluessel ist der oeffentliche anon-Schluessel (steckt auch in der App).
+  var SUPABASE_URL = "https://rtttewronorognamnpud.supabase.co";
+  var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0dHRld3Jvbm9yb2duYW1ucHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3NTUwMzUsImV4cCI6MjEwMTMzMTAzNX0.WQYherw2lDKpkOCr7zujc2hNdb333FiyXcOo3K6iJ_E";
+  if (code && window.fetch) {
+    // Titel kurz ausblenden, bis die Antwort da ist (hoechstens 1,5 s) - sonst
+    // stuende erst die allgemeine Einladung da und spraenge dann um.
+    var wurzel = document.documentElement;
+    wurzel.classList.add("wartet");
+    var fertig = function () { wurzel.classList.remove("wartet"); };
+    setTimeout(fertig, 1500);
+    fetch(SUPABASE_URL + "/rest/v1/rpc/gruppenlink_info", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON },
+      body: JSON.stringify({ p_code: code })
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (g) {
+        if (!g || typeof g.name !== "string" || !g.name) return;
+        var titel = document.getElementById("titel");
+        titel.textContent = "Du bist eingeladen in ";
+        var name = document.createElement("span");
+        name.className = "gruppe";
+        name.textContent = g.name;
+        titel.appendChild(name);
+        if (g.name.length > 16) titel.className = "lang";
+        var teile = [];
+        if (typeof g.von === "string" && g.von) teile.push("von " + g.von);
+        if (typeof g.anzahl === "number" && g.anzahl >= 3) teile.push(g.anzahl + " sind schon dabei");
+        if (teile.length) document.getElementById("vorspann").textContent = teile.join(" · ");
+        document.title = "Einladung in " + g.name + " – Breadbox";
+      })
+      .catch(function () {})
+      .then(fertig);
   }
 
   var laden = document.getElementById("laden");
